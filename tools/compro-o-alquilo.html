@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Compro o alquilo? | Arquitectura del Dinero</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* Layout específico de esta herramienta */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .form-grid .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-grid .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 760px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-title {
+            margin: 0.25rem 0 1rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .section-title.buy { color: #3b82f6; }
+        .section-title.rent { color: #10b981; }
+        .section-title.general { color: rgba(255,255,255,0.85); }
+
+        .help {
+            color: rgba(255,255,255,0.65);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            margin: 1rem 0 0;
+        }
+
+        @media (max-width: 760px) {
+            .mini-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="tool-page">
+    <!-- Header -->
+    <header class="tool-header">
+        <div class="container">
+            <a href="../index.html" class="back-link">← Volver al inicio</a>
+            <h1>¿Compro o alquilo?</h1>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="tool-content">
+        <div class="container">
+            <h2 class="tool-title">¿Compro o alquilo?</h2>
+            <p class="tool-description">
+                Compará escenarios financieros entre comprar una propiedad o alquilar e invertir la diferencia.
+            </p>
+
+            <div class="calculator">
+                <form id="comparacionForm">
+                    <h3 class="section-title buy">Escenario: Comprar</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="valorPropiedad">Valor de la propiedad ($)</label>
+                            <input type="number" id="valorPropiedad" value="150000000" min="0" step="100000" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pagoInicial">Pago inicial / anticipo ($)</label>
+                            <input type="number" id="pagoInicial" value="37500000" min="0" step="100000" required>
+                            <small class="help">Referencia: 25% del valor.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="gastosCompra">Gastos de compra ($)</label>
+                            <input type="number" id="gastosCompra" value="7500000" min="0" step="10000" required>
+                            <small class="help">Referencia: 5% del valor.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tasaHipoteca">Tasa de interés hipotecaria anual (%)</label>
+                            <input type="number" id="tasaHipoteca" value="8" min="0" max="200" step="0.1" required>
+                            <small class="help">Sistema francés: cuota fija mensual.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expensasExtra">Expensas extraordinarias (dueño) - mensual ($)</label>
+                            <input type="number" id="expensasExtra" value="100000" min="0" step="1000" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mantenimiento">Mantenimiento anual estimado ($)</label>
+                            <input type="number" id="mantenimiento" value="1500000" min="0" step="10000" required>
+                            <small class="help">Referencia: 1% anual del valor.</small>
+                        </div>
+
+                        <div class="form-group full">
+                            <label for="apreciacion">Apreciación anual de la propiedad (%)</label>
+                            <input type="number" id="apreciacion" value="2" min="-50" max="200" step="0.1" required>
+                            <small class="help">Opcional para modelar el valor de mercado (0% = valor constante).</small>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title rent" style="margin-top: 2rem;">Escenario: Alquilar</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="alquiler">Alquiler mensual ($)</label>
+                            <input type="number" id="alquiler" value="1200000" min="0" step="10000" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="aumentoAlquiler">Aumento anual del alquiler (%)</label>
+                            <input type="number" id="aumentoAlquiler" value="15" min="0" max="300" step="0.1" required>
+                        </div>
+
+                        <div class="form-group full">
+                            <label for="rendimientoInversion">Rendimiento anual de inversiones (%)</label>
+                            <input type="number" id="rendimientoInversion" value="8" min="0" max="200" step="0.1" required>
+                            <small class="help">Se invierte la diferencia mensual entre las dos opciones (ver “Supuesto de presupuesto” en resultados).</small>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title general" style="margin-top: 2rem;">General</h3>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label for="anos">Período a comparar (años)</label>
+                            <input type="number" id="anos" value="20" min="1" max="40" step="1" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="calculate-button">Comparar escenarios</button>
+                </form>
+
+                <div id="results" class="results hidden">
+                    <h3>Comparación</h3>
+
+                    <div class="mini-grid">
+                        <div style="background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                            <h4 style="margin-bottom: 0.75rem;">Pagos mensuales (inicio)</h4>
+                            <div class="result-item">
+                                <span class="result-label">Cuota hipoteca (francés):</span>
+                                <span class="result-value" id="cuotaHipoteca">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Costos dueño (extra+mant.):</span>
+                                <span class="result-value" id="costosDueno">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Total comprar (mes):</span>
+                                <span class="result-value" id="totalComprarMes">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Alquiler (mes):</span>
+                                <span class="result-value" id="alquilerMes">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Diferencia (comprar - alquilar):</span>
+                                <span class="result-value" id="diffMes">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Ratio (comprar / alquilar):</span>
+                                <span class="result-value" id="ratioMes">-</span>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                            <h4 style="margin-bottom: 0.75rem;">Hipoteca (detalle)</h4>
+                            <div class="result-item">
+                                <span class="result-label">Capital financiado:</span>
+                                <span class="result-value" id="capitalFinanciado">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Tasa mensual:</span>
+                                <span class="result-value" id="tasaMensual">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Cuotas:</span>
+                                <span class="result-value" id="cantidadCuotas">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Intereses estimados totales:</span>
+                                <span class="result-value" id="interesesTotales">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mini-grid">
+                        <div style="background: rgba(59, 130, 246, 0.08); padding: 1rem; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.35);">
+                            <h4 style="color: #93c5fd; margin-bottom: 0.75rem;">Desglose final (comprar)</h4>
+                            <div class="result-item">
+                                <span class="result-label">Valor casa final:</span>
+                                <span class="result-value" id="valorCasaFinal">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Factor apreciación (\( (1+a)^{n} \)):</span>
+                                <span class="result-value" id="factorApreciacion">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Valor esperado (solo apreciación):</span>
+                                <span class="result-value" id="valorEsperadoApreciacion">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Saldo hipoteca final:</span>
+                                <span class="result-value" id="saldoFinal">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Inversiones final:</span>
+                                <span class="result-value" id="invComprarFinal">-</span>
+                            </div>
+                        </div>
+                        <div style="background: rgba(16, 185, 129, 0.08); padding: 1rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.35);">
+                            <h4 style="color: #6ee7b7; margin-bottom: 0.75rem;">Desglose final (alquilar)</h4>
+                            <div class="result-item">
+                                <span class="result-label">Capital invertido final:</span>
+                                <span class="result-value" id="invAlquilarFinal">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                        <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid #3b82f6;">
+                            <h4 style="color: #3b82f6; margin-bottom: 0.5rem;">Comprar</h4>
+                            <p style="font-size: 1.5rem; font-weight: 600;" id="patrimonioCompra">-</p>
+                            <small style="color: #a0a0a0;">Patrimonio neto (casa - deuda + inversiones)</small>
+                        </div>
+                        <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid #10b981;">
+                            <h4 style="color: #10b981; margin-bottom: 0.5rem;">Alquilar + Invertir</h4>
+                            <p style="font-size: 1.5rem; font-weight: 600;" id="patrimonioAlquiler">-</p>
+                            <small style="color: #a0a0a0;">Capital invertido acumulado (no incluye alquiler pagado)</small>
+                        </div>
+                    </div>
+
+                    <div class="result-item">
+                        <span class="result-label">Mejor opción:</span>
+                        <span class="result-value" id="mejorOpcion">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Diferencia:</span>
+                        <span class="result-value" id="diferencia">-</span>
+                    </div>
+
+                    <div style="margin-top: 1rem;" class="result-item">
+                        <span class="result-label">Total pagado (alquiler):</span>
+                        <span class="result-value" id="totalPagadoAlquiler">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Total pagado (hipoteca + costos dueño):</span>
+                        <span class="result-value" id="totalPagadoComprar">-</span>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="comparacionChart"></canvas>
+                    </div>
+
+                    <div style="margin-top: 2rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                        <h4 style="margin-bottom: 1rem;">Detalles del análisis</h4>
+                        <div style="font-size: 0.95rem; color: #a0a0a0; line-height: 1.8;">
+                            <p><strong>Hipoteca (sistema francés):</strong> calcula cuota fija mensual con capital financiado = valor de la propiedad - anticipo.</p>
+                            <p><strong>Comprar:</strong> Patrimonio = (valor de mercado de la casa - saldo de deuda) + inversiones. Además paga expensas extraordinarias (dueño) y mantenimiento anual.</p>
+                            <p><strong>Alquilar:</strong> Invierte el capital inicial equivalente (anticipo + gastos de compra) y también invierte la diferencia mensual vs comprar (según el presupuesto mensual fijo).</p>
+                            <p><strong>Presupuesto mensual fijo:</strong> ambas opciones usan el mismo presupuesto mensual = costo de comprar del mes 1 (hipoteca + expensas extraordinarias + mantenimiento mensual). La diferencia no gastada se invierte al rendimiento especificado.</p>
+                            <p><strong>Gráfico:</strong> muestra el patrimonio neto al comprar (valor de la casa - deuda + inversiones) vs el capital invertido al alquilar.</p>
+                            <p style="margin-top: 1rem; font-style: italic;">Sigue siendo un modelo educativo: no incluye impuestos, seguros, comisiones de venta, vacancia, mudanzas, etc.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-disclaimer">
+                Herramienta educativa simplificada. Los resultados son estimaciones y no constituyen asesoramiento financiero.
+            </p>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let comparacionChart = null;
+
+        document.getElementById('comparacionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Obtener valores - COMPRAR
+            const valorPropiedad = parseFloat(document.getElementById('valorPropiedad').value);
+            const pagoInicial = parseFloat(document.getElementById('pagoInicial').value);
+            const gastosCompra = parseFloat(document.getElementById('gastosCompra').value);
+            const tasaHipoteca = parseFloat(document.getElementById('tasaHipoteca').value) / 100;
+            const expensasExtra = parseFloat(document.getElementById('expensasExtra').value);
+            const mantenimiento = parseFloat(document.getElementById('mantenimiento').value);
+            const apreciacion = parseFloat(document.getElementById('apreciacion').value) / 100;
+            
+            // Obtener valores - ALQUILAR
+            const alquiler = parseFloat(document.getElementById('alquiler').value);
+            const aumentoAlquiler = parseFloat(document.getElementById('aumentoAlquiler').value) / 100;
+            const rendimientoInversion = parseFloat(document.getElementById('rendimientoInversion').value) / 100;
+            
+            // General
+            const anos = parseInt(document.getElementById('anos').value);
+
+            // Validaciones mínimas
+            if (pagoInicial > valorPropiedad) {
+                alert('El anticipo no puede ser mayor al valor de la propiedad.');
+                return;
+            }
+            if (anos <= 0) {
+                alert('El período debe ser mayor a 0.');
+                return;
+            }
+            
+            // Simular ambos escenarios
+            const resultado = simularComparacion({
+                valorPropiedad,
+                pagoInicial,
+                gastosCompra,
+                tasaHipoteca,
+                expensasExtra,
+                mantenimientoAnual: mantenimiento,
+                apreciacion,
+                alquilerMensual: alquiler,
+                aumentoAlquiler,
+                rendimientoInversion,
+                anos
+            });
+            
+            // Mostrar resultados
+            document.getElementById('patrimonioCompra').textContent = 
+                window.FinanceUtils.formatCurrency(resultado.compra.patrimonioFinal);
+            document.getElementById('patrimonioAlquiler').textContent = 
+                window.FinanceUtils.formatCurrency(resultado.alquiler.capitalFinal);
+
+            document.getElementById('cuotaHipoteca').textContent = window.FinanceUtils.formatCurrency(resultado.hipoteca.cuotaMensual);
+            document.getElementById('costosDueno').textContent = window.FinanceUtils.formatCurrency(resultado.compra.costosDuenoMensualInicial);
+            document.getElementById('totalComprarMes').textContent = window.FinanceUtils.formatCurrency(resultado.compra.costoViviendaMensualInicial);
+            document.getElementById('alquilerMes').textContent = window.FinanceUtils.formatCurrency(resultado.alquiler.alquilerMensualInicial);
+
+            const diffMes = resultado.compra.costoViviendaMensualInicial - resultado.alquiler.alquilerMensualInicial;
+            document.getElementById('diffMes').textContent = window.FinanceUtils.formatCurrency(diffMes);
+            document.getElementById('ratioMes').textContent = (resultado.alquiler.alquilerMensualInicial > 0)
+                ? (resultado.compra.costoViviendaMensualInicial / resultado.alquiler.alquilerMensualInicial).toFixed(2) + 'x'
+                : '-';
+
+            document.getElementById('capitalFinanciado').textContent = window.FinanceUtils.formatCurrency(resultado.hipoteca.capital);
+            document.getElementById('tasaMensual').textContent = (resultado.hipoteca.tasaMensual * 100).toFixed(4) + '%';
+            document.getElementById('cantidadCuotas').textContent = resultado.hipoteca.cuotas + ' meses';
+            document.getElementById('interesesTotales').textContent = window.FinanceUtils.formatCurrency(resultado.hipoteca.interesesTotalesEstimados);
+
+            document.getElementById('totalPagadoAlquiler').textContent = window.FinanceUtils.formatCurrency(resultado.alquiler.totalPagadoAlquiler);
+            document.getElementById('totalPagadoComprar').textContent = window.FinanceUtils.formatCurrency(resultado.compra.totalPagadoComprar);
+
+            document.getElementById('valorCasaFinal').textContent = window.FinanceUtils.formatCurrency(resultado.compra.valorCasaFinal);
+            document.getElementById('saldoFinal').textContent = window.FinanceUtils.formatCurrency(resultado.compra.saldoHipotecaFinal);
+            document.getElementById('invComprarFinal').textContent = window.FinanceUtils.formatCurrency(resultado.compra.inversionFinal);
+            document.getElementById('invAlquilarFinal').textContent = window.FinanceUtils.formatCurrency(resultado.alquiler.inversionFinal);
+
+            // Check de apreciación para evitar confusión (valor casa vs patrimonio)
+            const factorAprec = Math.pow(1 + apreciacion, anos);
+            document.getElementById('factorApreciacion').textContent = factorAprec.toFixed(4) + 'x';
+            document.getElementById('valorEsperadoApreciacion').textContent = window.FinanceUtils.formatCurrency(valorPropiedad * factorAprec);
+            
+            const diferencia = Math.abs(resultado.compra.patrimonioFinal - resultado.alquiler.capitalFinal);
+            const mejorOpcion = resultado.compra.patrimonioFinal > resultado.alquiler.capitalFinal 
+                ? 'Comprar' 
+                : 'Alquilar + Invertir';
+            
+            document.getElementById('mejorOpcion').textContent = mejorOpcion;
+            document.getElementById('diferencia').textContent = 
+                window.FinanceUtils.formatCurrency(diferencia);
+            
+            // Mostrar sección de resultados
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Crear o actualizar gráfico
+            createChart(resultado.compra.timeline, resultado.alquiler.timeline);
+        });
+
+        function frenchPayment(capital, tasaAnual, anos) {
+            const cuotas = Math.max(0, Math.round(anos * 12));
+            const tasaMensual = tasaAnual / 12;
+
+            if (cuotas === 0) {
+                return { cuotaMensual: 0, tasaMensual, cuotas };
+            }
+
+            if (tasaMensual === 0) {
+                return { cuotaMensual: capital / cuotas, tasaMensual, cuotas };
+            }
+
+            const cuotaMensual = (capital * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -cuotas));
+            return { cuotaMensual, tasaMensual, cuotas };
+        }
+
+        function simularComparacion(params) {
+            const {
+                valorPropiedad,
+                pagoInicial,
+                gastosCompra,
+                tasaHipoteca,
+                expensasExtra,
+                mantenimientoAnual,
+                apreciacion,
+                alquilerMensual,
+                aumentoAlquiler,
+                rendimientoInversion,
+                anos
+            } = params;
+
+            const meses = Math.round(anos * 12);
+            const capitalHipoteca = Math.max(0, valorPropiedad - pagoInicial);
+            const hipoteca = frenchPayment(capitalHipoteca, tasaHipoteca, anos);
+
+            // Rendimiento mensual compuesto
+            const tasaInvMensual = Math.pow(1 + rendimientoInversion, 1 / 12) - 1;
+
+            // Costos dueño mensuales
+            const costosDuenoMensual = expensasExtra + (mantenimientoAnual / 12);
+            
+            // Presupuesto fijo mensual = costo inicial de comprar (mes 1)
+            const presupuestoMensualFijo = hipoteca.cuotaMensual + costosDuenoMensual;
+
+            // Estados COMPRAR
+            let valorCasa = valorPropiedad;
+            let saldoHipoteca = capitalHipoteca;
+            let inversionComprar = 0; // Empieza en 0 porque ya pagó anticipo + gastos
+            let totalPagadoComprar = pagoInicial + gastosCompra;
+
+            // Estados ALQUILAR
+            let inversionAlquilar = pagoInicial + gastosCompra; // Capital inicial que NO gastó
+            let alquilerActual = alquilerMensual;
+            let totalPagadoAlquiler = 0;
+
+            const timelineCompra = [];
+            const timelineAlquiler = [];
+            let interesesAcumulados = 0;
+
+            // Año 0
+            timelineCompra.push({
+                year: 0,
+                valorCasa,
+                saldoHipoteca,
+                inversion: inversionComprar,
+                patrimonio: Math.max(0, (valorCasa - saldoHipoteca) + inversionComprar),
+                pagadoAcumulado: totalPagadoComprar
+            });
+            timelineAlquiler.push({
+                year: 0,
+                inversion: Math.max(0, inversionAlquilar),
+                alquilerPagadoAcumulado: totalPagadoAlquiler
+            });
+
+            for (let mes = 1; mes <= meses; mes++) {
+                // Aumentos anuales del alquiler (al inicio de cada año)
+                if (mes % 12 === 1 && mes !== 1) {
+                    alquilerActual *= (1 + aumentoAlquiler);
+                }
+
+                // === ESCENARIO COMPRAR ===
+                // Paga cuota de hipoteca (si aplica) + costos de dueño
+                const cuota = (capitalHipoteca > 0 && mes <= hipoteca.cuotas) ? hipoteca.cuotaMensual : 0;
+                const costoComprarMes = cuota + costosDuenoMensual;
+                totalPagadoComprar += costoComprarMes;
+
+                // Si el presupuesto fijo es mayor al costo real, la diferencia se invierte
+                const diferenciaComprar = Math.max(0, presupuestoMensualFijo - costoComprarMes);
+                inversionComprar = (inversionComprar * (1 + tasaInvMensual)) + diferenciaComprar;
+
+                // Amortizar hipoteca (sistema francés)
+                if (capitalHipoteca > 0 && mes <= hipoteca.cuotas && saldoHipoteca > 0) {
+                    const interesMes = saldoHipoteca * hipoteca.tasaMensual;
+                    const amortizacion = Math.max(0, hipoteca.cuotaMensual - interesMes);
+                    interesesAcumulados += interesMes;
+                    saldoHipoteca = Math.max(0, saldoHipoteca - amortizacion);
+                }
+
+                // === ESCENARIO ALQUILAR ===
+                // Paga alquiler mensual
+                const costoAlquilarMes = alquilerActual;
+                totalPagadoAlquiler += costoAlquilarMes;
+
+                // La diferencia entre presupuesto fijo y alquiler se invierte
+                const diferenciaAlquilar = Math.max(0, presupuestoMensualFijo - costoAlquilarMes);
+                inversionAlquilar = (inversionAlquilar * (1 + tasaInvMensual)) + diferenciaAlquilar;
+
+                // Registrar anual
+                if (mes % 12 === 0) {
+                    const year = mes / 12;
+                    // Apreciación anual de la propiedad al cierre de cada año
+                    valorCasa *= (1 + apreciacion);
+                    const patrimonioComprar = (valorCasa - saldoHipoteca) + inversionComprar;
+                    timelineCompra.push({
+                        year,
+                        valorCasa,
+                        saldoHipoteca,
+                        inversion: Math.max(0, inversionComprar),
+                        patrimonio: Math.max(0, patrimonioComprar),
+                        pagadoAcumulado: totalPagadoComprar
+                    });
+                    timelineAlquiler.push({
+                        year,
+                        inversion: Math.max(0, inversionAlquilar),
+                        alquilerPagadoAcumulado: totalPagadoAlquiler
+                    });
+                }
+            }
+
+            const patrimonioFinalCompra = timelineCompra[timelineCompra.length - 1].patrimonio;
+            const capitalFinalAlquiler = timelineAlquiler[timelineAlquiler.length - 1].inversion;
+
+            const interesesTotalesEstimados = Math.max(0, (hipoteca.cuotaMensual * hipoteca.cuotas) - capitalHipoteca);
+
+            return {
+                hipoteca: {
+                    capital: capitalHipoteca,
+                    tasaMensual: hipoteca.tasaMensual,
+                    cuotas: hipoteca.cuotas,
+                    cuotaMensual: hipoteca.cuotaMensual,
+                    interesesTotalesEstimados,
+                    interesesAcumulados
+                },
+                compra: {
+                    costosDuenoMensualInicial: costosDuenoMensual,
+                    costoViviendaMensualInicial: hipoteca.cuotaMensual + costosDuenoMensual,
+                    patrimonioFinal: patrimonioFinalCompra,
+                    totalPagadoComprar,
+                    valorCasaFinal: valorCasa,
+                    saldoHipotecaFinal: saldoHipoteca,
+                    inversionFinal: inversionComprar,
+                    timeline: timelineCompra
+                },
+                alquiler: {
+                    alquilerMensualInicial: alquilerMensual,
+                    capitalFinal: capitalFinalAlquiler,
+                    totalPagadoAlquiler,
+                    inversionFinal: inversionAlquilar,
+                    timeline: timelineAlquiler
+                }
+            };
+        }
+
+        function createChart(timelineCompra, timelineAlquiler) {
+            const ctx = document.getElementById('comparacionChart').getContext('2d');
+            
+            const labels = timelineCompra.map(item => `Año ${item.year}`);
+            const dataValorCasa = timelineCompra.map(item => item.valorCasa);
+            const dataInversionAlquiler = timelineAlquiler.map(item => item.inversion);
+            
+            if (comparacionChart) {
+                comparacionChart.destroy();
+            }
+            
+            comparacionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Comprar (valor de la casa)',
+                            data: dataValorCasa,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0
+                        },
+                        {
+                            label: 'Alquilar (capital invertido)',
+                            data: dataInversionAlquiler,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#e0e0e0',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += window.FinanceUtils.formatCurrency(context.parsed.y);
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#a0a0a0',
+                                callback: function(value) {
+                                    return '$' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#a0a0a0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo de Inversión - Interés Compuesto | Arquitectura del Dinero</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="tool-page">
+    <!-- Header -->
+    <header class="tool-header">
+        <div class="container">
+            <a href="../index.html" class="back-link">← Volver al inicio</a>
+            <h1>Interés Compuesto</h1>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="tool-content">
+        <div class="container">
+            <h2 class="tool-title">Cálculo de Inversión</h2>
+            <p class="tool-description">
+                Simulá cómo crece tu inversión en el tiempo considerando capital inicial, aportes mensuales y tasa de interés.
+            </p>
+
+            <div class="calculator">
+                <form id="compoundForm">
+                    <div class="form-group">
+                        <label for="capitalInicial">Capital inicial ($)</label>
+                        <input type="number" id="capitalInicial" value="100000" min="0" step="1000" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aporteMensual">Aporte mensual ($)</label>
+                        <input type="number" id="aporteMensual" value="10000" min="0" step="1000" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tasaAnual">Tasa de interés anual (%)</label>
+                        <input type="number" id="tasaAnual" value="8" min="0" max="100" step="0.1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="anos">Período (años)</label>
+                        <input type="number" id="anos" value="10" min="1" max="50" step="1" required>
+                    </div>
+
+                    <button type="submit" class="calculate-button">Calcular</button>
+                </form>
+
+                <div id="results" class="results hidden">
+                    <h3>Resultados</h3>
+                    <div class="result-item">
+                        <span class="result-label">Monto final:</span>
+                        <span class="result-value" id="montoFinal">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Total invertido:</span>
+                        <span class="result-value" id="totalInvertido">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Intereses ganados:</span>
+                        <span class="result-value" id="interesesGanados">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Rendimiento:</span>
+                        <span class="result-value" id="rendimiento">-</span>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-disclaimer">
+                Herramienta educativa. Los resultados son estimaciones y no constituyen asesoramiento financiero.
+            </p>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let growthChart = null;
+
+        document.getElementById('compoundForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Obtener valores
+            const capitalInicial = parseFloat(document.getElementById('capitalInicial').value);
+            const aporteMensual = parseFloat(document.getElementById('aporteMensual').value);
+            const tasaAnual = parseFloat(document.getElementById('tasaAnual').value);
+            const anos = parseInt(document.getElementById('anos').value);
+            
+            // Calcular
+            const resultado = window.FinanceUtils.calculateCompoundInterest(
+                capitalInicial,
+                aporteMensual,
+                tasaAnual,
+                anos
+            );
+            
+            // Mostrar resultados
+            document.getElementById('montoFinal').textContent = 
+                window.FinanceUtils.formatCurrency(resultado.finalBalance);
+            document.getElementById('totalInvertido').textContent = 
+                window.FinanceUtils.formatCurrency(resultado.totalContributions);
+            document.getElementById('interesesGanados').textContent = 
+                window.FinanceUtils.formatCurrency(resultado.totalInterest);
+            
+            const rendimientoPorcentaje = (resultado.totalInterest / resultado.totalContributions) * 100;
+            document.getElementById('rendimiento').textContent = 
+                `${rendimientoPorcentaje.toFixed(2)}%`;
+            
+            // Mostrar sección de resultados
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Crear o actualizar gráfico
+            createChart(resultado.timeline);
+        });
+
+        function createChart(timeline) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            // Filtrar datos para mostrar solo puntos clave (cada 12 meses)
+            const filteredTimeline = timeline.filter((item, index) => index % 12 === 0);
+            
+            const labels = filteredTimeline.map(item => `Año ${(item.month / 12).toFixed(0)}`);
+            const balances = filteredTimeline.map(item => item.balance);
+            const contributions = filteredTimeline.map(item => item.contributions);
+            const interests = filteredTimeline.map(item => item.interest);
+            
+            if (growthChart) {
+                growthChart.destroy();
+            }
+            
+            growthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Balance Total',
+                            data: balances,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Capital Invertido',
+                            data: contributions,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Intereses',
+                            data: interests,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#e0e0e0',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += window.FinanceUtils.formatCurrency(context.parsed.y);
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#a0a0a0',
+                                callback: function(value) {
+                                    return '$' + (value / 1000).toFixed(0) + 'k';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#a0a0a0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

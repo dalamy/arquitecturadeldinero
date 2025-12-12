@@ -1,0 +1,10 @@
+# GitHub Pages configuration
+# Este archivo es opcional pero ayuda a configurar el sitio
+
+title: Arquitectura del Dinero
+description: Diseñá, medí y optimizá tu sistema financiero personal
+show_downloads: false
+google_analytics: # Agrega tu ID de Google Analytics aquí si querés
+
+# Theme (opcional, por defecto GitHub Pages no usa theme para HTML estático)
+# theme: jekyll-theme-minimal

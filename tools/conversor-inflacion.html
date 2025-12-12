@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Inflación | Arquitectura del Dinero</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="tool-page">
+    <!-- Header -->
+    <header class="tool-header">
+        <div class="container">
+            <a href="../index.html" class="back-link">← Volver al inicio</a>
+            <h1>Conversor de Inflación</h1>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="tool-content">
+        <div class="container">
+            <h2 class="tool-title">Conversor de Inflación</h2>
+            <p class="tool-description">
+                Convertí valores del pasado a precios actuales considerando la inflación en pesos argentinos o dólares estadounidenses.
+            </p>
+
+            <div class="calculator">
+                <form id="conversorForm">
+                    <div class="form-group">
+                        <label for="monto">Monto original</label>
+                        <input type="number" id="monto" value="100000" min="0" step="100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="moneda">Moneda</label>
+                        <select id="moneda">
+                            <option value="ARS">Pesos argentinos (ARS)</option>
+                            <option value="USD">Dólares estadounidenses (USD)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="anoOrigen">Año origen</label>
+                        <select id="anoOrigen">
+                            <!-- Se llena dinámicamente -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="anoDestino">Año destino</label>
+                        <select id="anoDestino">
+                            <!-- Se llena dinámicamente -->
+                        </select>
+                    </div>
+
+                    <button type="submit" class="calculate-button">Convertir</button>
+                </form>
+
+                <div id="results" class="results hidden">
+                    <h3>Resultado</h3>
+                    
+                    <div style="text-align: center; padding: 2rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; margin-bottom: 2rem;">
+                        <p style="font-size: 0.9rem; color: #a0a0a0; margin-bottom: 0.5rem;" id="textoOrigen">-</p>
+                        <p style="font-size: 2.5rem; font-weight: 700; color: #3b82f6; margin: 1rem 0;">↓</p>
+                        <p style="font-size: 0.9rem; color: #a0a0a0; margin-bottom: 0.5rem;" id="textoDestino">-</p>
+                        <p style="font-size: 2rem; font-weight: 700; color: #10b981;" id="montoConvertido">-</p>
+                    </div>
+
+                    <div class="result-item">
+                        <span class="result-label">Inflación acumulada:</span>
+                        <span class="result-value" id="inflacionAcumulada">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Años transcurridos:</span>
+                        <span class="result-value" id="anosTranscurridos">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Inflación promedio anual:</span>
+                        <span class="result-value" id="inflacionPromedio">-</span>
+                    </div>
+
+                    <div style="margin-top: 2rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                        <h4 style="margin-bottom: 1rem;">¿Qué significa esto?</h4>
+                        <div style="font-size: 0.95rem; color: #a0a0a0; line-height: 1.8;">
+                            <p>El monto original perdió poder adquisitivo debido a la inflación. 
+                            Para tener el mismo poder de compra hoy, necesitarías el monto actualizado.</p>
+                            <p style="margin-top: 1rem;"><strong>Ejemplo:</strong> Si en 2014 algo costaba $100, 
+                            con inflación acumulada, hoy costaría mucho más para representar el mismo valor real.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-disclaimer">
+                Herramienta educativa con datos aproximados. No constituye asesoramiento financiero.
+            </p>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        // Datos históricos de inflación (mismos que en inflacion.html)
+        const inflacionHistorica = {
+            ARS: {
+                2014: 23.9,
+                2015: 26.5,
+                2016: 38.5,
+                2017: 24.8,
+                2018: 47.6,
+                2019: 53.8,
+                2020: 36.1,
+                2021: 50.9,
+                2022: 94.8,
+                2023: 211.4,
+                2024: 117.8
+            },
+            USD: {
+                2014: 1.6,
+                2015: 0.1,
+                2016: 1.3,
+                2017: 2.1,
+                2018: 2.4,
+                2019: 1.8,
+                2020: 1.2,
+                2021: 4.7,
+                2022: 8.0,
+                2023: 4.1,
+                2024: 2.9
+            }
+        };
+
+        // Poblar selectores de año
+        function poblarAnos() {
+            const anos = Object.keys(inflacionHistorica.ARS).sort();
+            const selectOrigen = document.getElementById('anoOrigen');
+            const selectDestino = document.getElementById('anoDestino');
+
+            anos.forEach(ano => {
+                const option1 = document.createElement('option');
+                option1.value = ano;
+                option1.textContent = ano;
+                selectOrigen.appendChild(option1);
+
+                const option2 = document.createElement('option');
+                option2.value = ano;
+                option2.textContent = ano;
+                selectDestino.appendChild(option2);
+            });
+
+            // Seleccionar por defecto: 2014 a 2024
+            selectOrigen.value = '2014';
+            selectDestino.value = '2024';
+        }
+
+        poblarAnos();
+
+        document.getElementById('conversorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const monto = parseFloat(document.getElementById('monto').value);
+            const moneda = document.getElementById('moneda').value;
+            const anoOrigen = parseInt(document.getElementById('anoOrigen').value);
+            const anoDestino = parseInt(document.getElementById('anoDestino').value);
+
+            if (anoOrigen >= anoDestino) {
+                alert('El año destino debe ser posterior al año origen');
+                return;
+            }
+
+            // Calcular inflación acumulada
+            const datosMoneda = inflacionHistorica[moneda];
+            let factorAcumulado = 1;
+            
+            for (let ano = anoOrigen + 1; ano <= anoDestino; ano++) {
+                if (datosMoneda[ano]) {
+                    factorAcumulado *= (1 + datosMoneda[ano] / 100);
+                }
+            }
+
+            const montoConvertido = monto * factorAcumulado;
+            const inflacionAcumulada = (factorAcumulado - 1) * 100;
+            const anosTranscurridos = anoDestino - anoOrigen;
+            const inflacionPromedio = Math.pow(factorAcumulado, 1 / anosTranscurridos) - 1;
+
+            // Mostrar resultados
+            const simbolo = moneda === 'ARS' ? '$' : 'US$';
+            
+            document.getElementById('textoOrigen').textContent = 
+                `En ${anoOrigen} tenías`;
+            document.getElementById('textoDestino').textContent = 
+                `En ${anoDestino} equivale a`;
+            document.getElementById('montoConvertido').textContent = 
+                `${simbolo} ${montoConvertido.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            document.getElementById('inflacionAcumulada').textContent = 
+                inflacionAcumulada.toFixed(2) + '%';
+            document.getElementById('anosTranscurridos').textContent = 
+                anosTranscurridos + ' años';
+            document.getElementById('inflacionPromedio').textContent = 
+                (inflacionPromedio * 100).toFixed(2) + '%';
+
+            // Mostrar sección de resultados
+            document.getElementById('results').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inflación - Visualización histórica | Arquitectura del Dinero</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="tool-page">
+    <!-- Header -->
+    <header class="tool-header">
+        <div class="container">
+            <a href="../index.html" class="back-link">← Volver al inicio</a>
+            <h1>Inflación</h1>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="tool-content">
+        <div class="container">
+            <h2 class="tool-title">Visualización de Inflación</h2>
+            <p class="tool-description">
+                Visualizá la inflación a lo largo del tiempo para entender la pérdida de poder adquisitivo.
+            </p>
+
+            <div class="calculator">
+                <div class="form-group">
+                    <label for="pais">Seleccionar región</label>
+                    <select id="pais">
+                        <option value="argentina">Argentina</option>
+                        <option value="usa">Estados Unidos</option>
+                        <option value="global">Global (estimado)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="tipoGrafico">Tipo de visualización</label>
+                    <select id="tipoGrafico">
+                        <option value="anual">Inflación anual</option>
+                        <option value="acumulada">Inflación acumulada</option>
+                    </select>
+                </div>
+
+                <button class="calculate-button" onclick="generarGrafico()">Visualizar</button>
+
+                <div id="results" class="results" style="margin-top: 2rem;">
+                    <h3>Inflación histórica</h3>
+                    
+                    <div class="result-item">
+                        <span class="result-label">Promedio últimos 10 años:</span>
+                        <span class="result-value" id="promedio10">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Inflación acumulada (período completo):</span>
+                        <span class="result-value" id="acumuladaTotal">-</span>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="inflacionChart"></canvas>
+                    </div>
+
+                    <div style="margin-top: 2rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                        <h4 style="margin-bottom: 1rem;">¿Qué significa esto?</h4>
+                        <div style="font-size: 0.95rem; color: #a0a0a0; line-height: 1.8;">
+                            <p><strong>Inflación anual:</strong> Muestra cuánto aumentaron los precios cada año.</p>
+                            <p><strong>Inflación acumulada:</strong> Muestra la pérdida total de poder adquisitivo. Si comenzás con $100 y hay 50% de inflación acumulada, ahora necesitás $150 para comprar lo mismo.</p>
+                            <p style="margin-top: 1rem;">📊 <strong>Dato:</strong> Estos datos son históricos aproximados para fines educativos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-disclaimer">
+                Herramienta educativa con datos aproximados. No constituye asesoramiento financiero.
+            </p>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let inflacionChart = null;
+
+        // Datos históricos aproximados de inflación (datos de ejemplo)
+        const datosInflacion = {
+            argentina: {
+                anos: ['2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024'],
+                tasas: [23.9, 26.5, 38.5, 24.8, 47.6, 53.8, 36.1, 50.9, 94.8, 211.4, 117.8]
+            },
+            usa: {
+                anos: ['2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024'],
+                tasas: [1.6, 0.1, 1.3, 2.1, 2.4, 1.8, 1.2, 4.7, 8.0, 4.1, 2.9]
+            },
+            global: {
+                anos: ['2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024'],
+                tasas: [2.9, 2.8, 2.8, 3.2, 3.6, 3.5, 3.2, 4.7, 8.7, 6.9, 5.8]
+            }
+        };
+
+        function generarGrafico() {
+            const pais = document.getElementById('pais').value;
+            const tipoGrafico = document.getElementById('tipoGrafico').value;
+            const datos = datosInflacion[pais];
+
+            let datosParaGrafico;
+            let labelGrafico;
+
+            if (tipoGrafico === 'anual') {
+                datosParaGrafico = datos.tasas;
+                labelGrafico = 'Inflación Anual (%)';
+            } else {
+                // Calcular inflación acumulada
+                datosParaGrafico = calcularInflacionAcumulada(datos.tasas);
+                labelGrafico = 'Inflación Acumulada (%)';
+            }
+
+            // Calcular promedio últimos 10 años
+            const ultimos10 = datos.tasas.slice(-10);
+            const promedio = ultimos10.reduce((a, b) => a + b, 0) / ultimos10.length;
+            document.getElementById('promedio10').textContent = promedio.toFixed(2) + '%';
+
+            // Calcular inflación acumulada total
+            const inflacionAcumuladaFinal = datosParaGrafico[datosParaGrafico.length - 1];
+            document.getElementById('acumuladaTotal').textContent = inflacionAcumuladaFinal.toFixed(2) + '%';
+
+            crearGrafico(datos.anos, datosParaGrafico, labelGrafico);
+        }
+
+        function calcularInflacionAcumulada(tasasAnuales) {
+            let acumulada = 0;
+            const resultado = [];
+
+            for (let tasa of tasasAnuales) {
+                acumulada = ((1 + acumulada / 100) * (1 + tasa / 100) - 1) * 100;
+                resultado.push(acumulada);
+            }
+
+            return resultado;
+        }
+
+        function crearGrafico(labels, data, label) {
+            const ctx = document.getElementById('inflacionChart').getContext('2d');
+
+            if (inflacionChart) {
+                inflacionChart.destroy();
+            }
+
+            inflacionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: label,
+                            data: data,
+                            backgroundColor: data.map(value => {
+                                // Color más intenso para inflaciones más altas
+                                if (value > 100) return 'rgba(239, 68, 68, 0.8)';
+                                if (value > 50) return 'rgba(245, 158, 11, 0.8)';
+                                if (value > 10) return 'rgba(59, 130, 246, 0.8)';
+                                return 'rgba(16, 185, 129, 0.8)';
+                            }),
+                            borderColor: data.map(value => {
+                                if (value > 100) return '#ef4444';
+                                if (value > 50) return '#f59e0b';
+                                if (value > 10) return '#3b82f6';
+                                return '#10b981';
+                            }),
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#e0e0e0',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#a0a0a0',
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#a0a0a0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generar gráfico inicial
+        generarGrafico();
+    </script>
+</body>
+</html>

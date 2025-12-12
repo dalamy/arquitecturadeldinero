@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo de Retiro | Arquitectura del Dinero</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="tool-page">
+    <!-- Header -->
+    <header class="tool-header">
+        <div class="container">
+            <a href="../index.html" class="back-link">← Volver al inicio</a>
+            <h1>Cálculo de Retiro</h1>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="tool-content">
+        <div class="container">
+            <h2 class="tool-title">Cálculo de Retiro</h2>
+            <p class="tool-description">
+                Estimá cuánto capital necesitás para retirarte y cuánto tiempo puede sostenerse según tu estilo de vida.
+            </p>
+
+            <div class="calculator">
+                <form id="retiroForm">
+                    <div class="form-group">
+                        <label for="gastoMensual">Gasto mensual deseado ($)</label>
+                        <input type="number" id="gastoMensual" value="200000" min="0" step="10000" required>
+                        <small style="color: #a0a0a0; font-size: 0.9rem;">¿Cuánto necesitás mensualmente para vivir?</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tasaRetiro">Tasa de retiro anual (%)</label>
+                        <input type="number" id="tasaRetiro" value="4" min="0" max="20" step="0.1" required>
+                        <small style="color: #a0a0a0; font-size: 0.9rem;">Regla popular: 4% (conservador)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rendimientoAnual">Rendimiento anual esperado (%)</label>
+                        <input type="number" id="rendimientoAnual" value="6" min="0" max="20" step="0.1" required>
+                        <small style="color: #a0a0a0; font-size: 0.9rem;">Rendimiento de tus inversiones durante el retiro</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inflacion">Inflación anual esperada (%)</label>
+                        <input type="number" id="inflacion" value="3" min="0" max="50" step="0.1" required>
+                        <small style="color: #a0a0a0; font-size: 0.9rem;">Ajusta el gasto por inflación</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="capitalActual">Capital actual (opcional, $)</label>
+                        <input type="number" id="capitalActual" value="0" min="0" step="10000">
+                        <small style="color: #a0a0a0; font-size: 0.9rem;">Si ya tenés capital acumulado</small>
+                    </div>
+
+                    <button type="submit" class="calculate-button">Calcular</button>
+                </form>
+
+                <div id="results" class="results hidden">
+                    <h3>Resultados</h3>
+                    <div class="result-item">
+                        <span class="result-label">Capital necesario para retirarte:</span>
+                        <span class="result-value" id="capitalObjetivo">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Años de cobertura:</span>
+                        <span class="result-value" id="anosCobertura">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Retiro mensual (primer año):</span>
+                        <span class="result-value" id="retiroMensual">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Te falta acumular:</span>
+                        <span class="result-value" id="faltaAcumular">-</span>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="retiroChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-disclaimer">
+                Herramienta educativa. Los resultados son estimaciones y no constituyen asesoramiento financiero.
+            </p>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let retiroChart = null;
+
+        document.getElementById('retiroForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Obtener valores
+            const gastoMensual = parseFloat(document.getElementById('gastoMensual').value);
+            const tasaRetiro = parseFloat(document.getElementById('tasaRetiro').value);
+            const rendimientoAnual = parseFloat(document.getElementById('rendimientoAnual').value);
+            const inflacion = parseFloat(document.getElementById('inflacion').value);
+            const capitalActual = parseFloat(document.getElementById('capitalActual').value) || 0;
+            
+            // Calcular capital objetivo usando la regla del retiro
+            const gastoAnual = gastoMensual * 12;
+            const capitalObjetivo = gastoAnual / (tasaRetiro / 100);
+            
+            // Calcular cuánto falta
+            const faltaAcumular = Math.max(0, capitalObjetivo - capitalActual);
+            
+            // Simular años de cobertura
+            const simulacion = simularRetiro(
+                capitalObjetivo,
+                gastoMensual,
+                rendimientoAnual,
+                inflacion
+            );
+            
+            // Mostrar resultados
+            document.getElementById('capitalObjetivo').textContent = 
+                window.FinanceUtils.formatCurrency(capitalObjetivo);
+            document.getElementById('anosCobertura').textContent = 
+                simulacion.years + ' años';
+            document.getElementById('retiroMensual').textContent = 
+                window.FinanceUtils.formatCurrency(gastoMensual);
+            document.getElementById('faltaAcumular').textContent = 
+                faltaAcumular > 0 ? window.FinanceUtils.formatCurrency(faltaAcumular) : 'Ya lo lograste!';
+            
+            // Mostrar sección de resultados
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Crear o actualizar gráfico
+            createChart(simulacion.timeline);
+        });
+
+        function simularRetiro(capital, gastoMensualInicial, rendimientoAnual, inflacion) {
+            let balance = capital;
+            const timeline = [{year: 0, balance: capital, withdrawal: 0}];
+            let year = 0;
+            const maxYears = 50; // Límite de simulación
+            
+            let gastoAnual = gastoMensualInicial * 12;
+            
+            while (balance > 0 && year < maxYears) {
+                year++;
+                
+                // Ajustar gasto por inflación
+                gastoAnual *= (1 + inflacion / 100);
+                
+                // Retirar dinero
+                balance -= gastoAnual;
+                
+                // Aplicar rendimiento al balance restante
+                if (balance > 0) {
+                    balance *= (1 + rendimientoAnual / 100);
+                }
+                
+                timeline.push({
+                    year: year,
+                    balance: Math.max(0, balance),
+                    withdrawal: gastoAnual
+                });
+            }
+            
+            return {
+                years: balance > 0 ? maxYears : year,
+                timeline: timeline
+            };
+        }
+
+        function createChart(timeline) {
+            const ctx = document.getElementById('retiroChart').getContext('2d');
+            
+            const labels = timeline.map(item => `Año ${item.year}`);
+            const balances = timeline.map(item => item.balance);
+            
+            if (retiroChart) {
+                retiroChart.destroy();
+            }
+            
+            retiroChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Capital Restante',
+                            data: balances,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#e0e0e0',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += window.FinanceUtils.formatCurrency(context.parsed.y);
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#a0a0a0',
+                                callback: function(value) {
+                                    return '$' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#a0a0a0',
+                                maxTicksLimit: 15
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
