@@ -140,7 +140,7 @@
 
                         <div class="form-group">
                             <label for="aumentoAlquiler">Aumento anual del alquiler (%)</label>
-                            <input type="number" id="aumentoAlquiler" value="15" min="0" max="300" step="0.1" required>
+                            <input type="number" id="aumentoAlquiler" value="2" min="0" max="300" step="0.1" required>
                         </div>
 
                         <div class="form-group full">
@@ -271,6 +271,12 @@
                     <div class="result-item">
                         <span class="result-label">Diferencia:</span>
                         <span class="result-value" id="diferencia">-</span>
+                    </div>
+
+                    <!-- Interpretación en texto -->
+                    <div id="interpretacion" style="margin-top: 1.5rem; padding: 1.25rem; background: rgba(255, 255, 255, 0.05); border-radius: 12px; border-left: 4px solid #3b82f6;">
+                        <h4 style="margin-bottom: 0.75rem; color: #93c5fd; font-size: 1.1rem;">📊 Interpretación del resultado</h4>
+                        <p id="interpretacionTexto" style="line-height: 1.7; color: rgba(255, 255, 255, 0.85); font-size: 0.95rem;">-</p>
                     </div>
 
                     <div style="margin-top: 1rem;" class="result-item">
@@ -413,12 +419,65 @@
             document.getElementById('diferencia').textContent = 
                 window.FinanceUtils.formatCurrency(diferencia);
             
+            // Generar interpretación en texto
+            generarInterpretacion(resultado, mejorOpcion, diferencia, anos, valorPropiedad);
+            
             // Mostrar sección de resultados
             document.getElementById('results').classList.remove('hidden');
             
             // Crear o actualizar gráfico
             createChart(resultado.compra.timeline, resultado.alquiler.timeline);
         });
+
+        function generarInterpretacion(resultado, mejorOpcion, diferencia, anos, valorPropiedad) {
+            const patrimonioCompra = resultado.compra.patrimonioFinal;
+            const capitalAlquiler = resultado.alquiler.capitalFinal;
+            const totalPagadoComprar = resultado.compra.totalPagadoComprar;
+            const totalPagadoAlquiler = resultado.alquiler.totalPagadoAlquiler;
+            const valorCasaFinal = resultado.compra.valorCasaFinal;
+            const inversionComprar = resultado.compra.inversionFinal;
+            const porcentajeDiferencia = ((diferencia / Math.max(patrimonioCompra, capitalAlquiler)) * 100).toFixed(1);
+            
+            let interpretacion = '';
+            
+            if (mejorOpcion === 'Comprar') {
+                const ventajaStr = window.FinanceUtils.formatCurrency(diferencia);
+                interpretacion = `<strong>✅ Comprar es la mejor opción</strong> en este escenario. `;
+                interpretacion += `Al cabo de ${anos} años, tendrías un patrimonio neto de ${window.FinanceUtils.formatCurrency(patrimonioCompra)}, `;
+                interpretacion += `que es ${ventajaStr} (${porcentajeDiferencia}%) superior a alquilar e invertir.<br><br>`;
+                
+                interpretacion += `<strong>Composición del patrimonio al comprar:</strong><br>`;
+                interpretacion += `• Valor de la casa: ${window.FinanceUtils.formatCurrency(valorCasaFinal)} (apreciación incluida)<br>`;
+                if (inversionComprar > 0) {
+                    interpretacion += `• Capital invertido: ${window.FinanceUtils.formatCurrency(inversionComprar)}<br>`;
+                }
+                interpretacion += `• Total pagado: ${window.FinanceUtils.formatCurrency(totalPagadoComprar)}<br><br>`;
+                
+                interpretacion += `<strong>⚠️ Consideraciones:</strong><br>`;
+                interpretacion += `• Necesitarás vender la propiedad para acceder al capital.<br>`;
+                interpretacion += `• Los costos de venta (comisiones, impuestos) reducirán el patrimonio neto.<br>`;
+                interpretacion += `• La propiedad requiere mantenimiento y puede tener períodos de vacancia al vender.`;
+                
+            } else {
+                const ventajaStr = window.FinanceUtils.formatCurrency(diferencia);
+                interpretacion = `<strong>✅ Alquilar + Invertir es la mejor opción</strong> en este escenario. `;
+                interpretacion += `Al cabo de ${anos} años, tendrías un capital acumulado de ${window.FinanceUtils.formatCurrency(capitalAlquiler)}, `;
+                interpretacion += `que es ${ventajaStr} (${porcentajeDiferencia}%) superior a comprar.<br><br>`;
+                
+                interpretacion += `<strong>Ventajas del escenario de alquilar:</strong><br>`;
+                interpretacion += `• Capital 100% líquido y accesible en cualquier momento.<br>`;
+                interpretacion += `• Mayor flexibilidad para cambiar de ubicación.<br>`;
+                interpretacion += `• Sin preocupaciones de mantenimiento o reparaciones.<br>`;
+                interpretacion += `• Total pagado en alquileres: ${window.FinanceUtils.formatCurrency(totalPagadoAlquiler)}<br><br>`;
+                
+                interpretacion += `<strong>⚠️ Consideraciones:</strong><br>`;
+                interpretacion += `• Requiere disciplina para invertir consistentemente la diferencia.<br>`;
+                interpretacion += `• Los alquileres pueden aumentar más de lo proyectado.<br>`;
+                interpretacion += `• No tienes la seguridad de tener un techo propio garantizado.`;
+            }
+            
+            document.getElementById('interpretacionTexto').innerHTML = interpretacion;
+        }
 
         function frenchPayment(capital, tasaAnual, anos) {
             const cuotas = Math.max(0, Math.round(anos * 12));
