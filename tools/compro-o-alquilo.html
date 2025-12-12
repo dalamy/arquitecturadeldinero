@@ -80,7 +80,7 @@
 
     <!-- Content -->
     <main class="tool-content">
-        <div class="container">
+        <div class="container" style="max-width: 1400px;">
             <h2 class="tool-title">¿Compro o alquilo?</h2>
             <p class="tool-description">
                 Compará escenarios financieros entre comprar una propiedad o alquilar e invertir la diferencia.
@@ -202,10 +202,6 @@
                                 <span class="result-label">Diferencia (comprar - alquilar):</span>
                                 <span class="result-value" id="diffMes">-</span>
                             </div>
-                            <div class="result-item">
-                                <span class="result-label">Ratio (comprar / alquilar):</span>
-                                <span class="result-value" id="ratioMes">-</span>
-                            </div>
                         </div>
                         <div style="background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
                             <h4 style="margin-bottom: 0.75rem;">Hipoteca (detalle)</h4>
@@ -232,7 +228,7 @@
                         <div style="background: rgba(59, 130, 246, 0.08); padding: 1rem; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.35);">
                             <h4 style="color: #93c5fd; margin-bottom: 0.75rem;">Desglose final (comprar)</h4>
                             <div class="result-item">
-                                <span class="result-label">Valor casa final:</span>
+                                <span class="result-label">Valor casa final (con apreciación):</span>
                                 <span class="result-value" id="valorCasaFinal">-</span>
                             </div>
                             <div class="result-item">
@@ -240,22 +236,14 @@
                                 <span class="result-value" id="factorApreciacion">-</span>
                             </div>
                             <div class="result-item">
-                                <span class="result-label">Valor esperado (solo apreciación):</span>
-                                <span class="result-value" id="valorEsperadoApreciacion">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="result-label">Saldo hipoteca final:</span>
-                                <span class="result-value" id="saldoFinal">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="result-label">Inversiones final:</span>
+                                <span class="result-label">Capital acumulado (inversiones):</span>
                                 <span class="result-value" id="invComprarFinal">-</span>
                             </div>
                         </div>
                         <div style="background: rgba(16, 185, 129, 0.08); padding: 1rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.35);">
                             <h4 style="color: #6ee7b7; margin-bottom: 0.75rem;">Desglose final (alquilar)</h4>
                             <div class="result-item">
-                                <span class="result-label">Capital invertido final:</span>
+                                <span class="result-label">Capital acumulado final:</span>
                                 <span class="result-value" id="invAlquilarFinal">-</span>
                             </div>
                         </div>
@@ -307,9 +295,9 @@
                             
                             <p><strong>Alquilar:</strong> Invierte el capital inicial equivalente (anticipo + gastos de compra que no gastaste) y además invierte la diferencia mensual positiva vs comprar. Este capital SÍ es líquido y accesible.</p>
                             
-                            <p><strong>Presupuesto mensual fijo:</strong> para comparar de forma justa, ambas opciones usan el mismo presupuesto mensual = costo de comprar del mes 1 (cuota hipoteca + expensas extraordinarias + mantenimiento mensual). Si una opción cuesta menos, la diferencia se invierte automáticamente al rendimiento especificado.</p>
+                            <p><strong>Presupuesto mensual fijo:</strong> para comparar de forma justa, ambas opciones usan el mismo presupuesto mensual = el MAYOR entre el costo de comprar inicial y el alquiler inicial. La opción más barata invierte automáticamente la diferencia al rendimiento especificado.</p>
                             
-                            <p><strong>¿Qué pasa si el alquiler es MÁS CARO que comprar?</strong> En ese caso, el escenario de alquilar NO puede invertir diferencia mensual (solo invierte el capital inicial). Solo el escenario de comprar invertirá el excedente del presupuesto.</p>
+                            <p><strong>Lógica de inversión:</strong> Si el alquiler es más barato que comprar, la diferencia se invierte en el escenario de alquilar. Si comprar es más barato que alquilar, la diferencia se invierte en el escenario de comprar. Así ambas opciones usan el mismo presupuesto total.</p>
                             
                             <p><strong>Gráfico:</strong> muestra el patrimonio neto comparable de cada opción a lo largo del tiempo. Para comprar: casa - deuda + inversiones. Para alquilar: capital invertido total.</p>
                             
@@ -399,9 +387,6 @@
 
             const diffMes = resultado.compra.costoViviendaMensualInicial - resultado.alquiler.alquilerMensualInicial;
             document.getElementById('diffMes').textContent = window.FinanceUtils.formatCurrency(diffMes);
-            document.getElementById('ratioMes').textContent = (resultado.alquiler.alquilerMensualInicial > 0)
-                ? (resultado.compra.costoViviendaMensualInicial / resultado.alquiler.alquilerMensualInicial).toFixed(2) + 'x'
-                : '-';
 
             document.getElementById('capitalFinanciado').textContent = window.FinanceUtils.formatCurrency(resultado.hipoteca.capital);
             document.getElementById('tasaMensual').textContent = (resultado.hipoteca.tasaMensual * 100).toFixed(4) + '%';
@@ -412,14 +397,12 @@
             document.getElementById('totalPagadoComprar').textContent = window.FinanceUtils.formatCurrency(resultado.compra.totalPagadoComprar);
 
             document.getElementById('valorCasaFinal').textContent = window.FinanceUtils.formatCurrency(resultado.compra.valorCasaFinal);
-            document.getElementById('saldoFinal').textContent = window.FinanceUtils.formatCurrency(resultado.compra.saldoHipotecaFinal);
             document.getElementById('invComprarFinal').textContent = window.FinanceUtils.formatCurrency(resultado.compra.inversionFinal);
             document.getElementById('invAlquilarFinal').textContent = window.FinanceUtils.formatCurrency(resultado.alquiler.inversionFinal);
 
             // Check de apreciación para evitar confusión (valor casa vs patrimonio)
             const factorAprec = Math.pow(1 + apreciacion, anos);
             document.getElementById('factorApreciacion').textContent = factorAprec.toFixed(4) + 'x';
-            document.getElementById('valorEsperadoApreciacion').textContent = window.FinanceUtils.formatCurrency(valorPropiedad * factorAprec);
             
             const diferencia = Math.abs(resultado.compra.patrimonioFinal - resultado.alquiler.capitalFinal);
             const mejorOpcion = resultado.compra.patrimonioFinal > resultado.alquiler.capitalFinal 
@@ -477,9 +460,10 @@
 
             // Costos dueño mensuales
             const costosDuenoMensual = expensasExtra + (mantenimientoAnual / 12);
+            const costoComprarInicial = hipoteca.cuotaMensual + costosDuenoMensual;
             
-            // Presupuesto fijo mensual = costo inicial de comprar (mes 1)
-            const presupuestoMensualFijo = hipoteca.cuotaMensual + costosDuenoMensual;
+            // Presupuesto fijo mensual = MÁXIMO entre costo de comprar y alquiler inicial
+            const presupuestoMensualFijo = Math.max(costoComprarInicial, alquilerMensual);
 
             // Estados COMPRAR
             let valorCasa = valorPropiedad;
