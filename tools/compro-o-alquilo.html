@@ -52,8 +52,18 @@
             margin: 1rem 0 0;
         }
 
+        .comparison-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
         @media (max-width: 760px) {
             .mini-grid {
+                grid-template-columns: 1fr;
+            }
+            .comparison-cards {
                 grid-template-columns: 1fr;
             }
         }
@@ -158,6 +168,11 @@
                         <div style="background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
                             <h4 style="margin-bottom: 0.75rem;">Pagos mensuales (inicio)</h4>
                             <div class="result-item">
+                                <span class="result-label">Presupuesto mensual fijo:</span>
+                                <span class="result-value" id="presupuestoFijo">-</span>
+                            </div>
+                            <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 0.75rem 0;">
+                            <div class="result-item">
                                 <span class="result-label">Cuota hipoteca (francés):</span>
                                 <span class="result-value" id="cuotaHipoteca">-</span>
                             </div>
@@ -169,10 +184,20 @@
                                 <span class="result-label">Total comprar (mes):</span>
                                 <span class="result-value" id="totalComprarMes">-</span>
                             </div>
+                            <div class="result-item" style="background: rgba(59, 130, 246, 0.1); padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px;">
+                                <span class="result-label">💰 A invertir (comprar):</span>
+                                <span class="result-value" id="inversionComprarMes" style="color: #3b82f6;">-</span>
+                            </div>
+                            <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 0.75rem 0;">
                             <div class="result-item">
                                 <span class="result-label">Alquiler (mes):</span>
                                 <span class="result-value" id="alquilerMes">-</span>
                             </div>
+                            <div class="result-item" style="background: rgba(16, 185, 129, 0.1); padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px;">
+                                <span class="result-label">💰 A invertir (alquilar):</span>
+                                <span class="result-value" id="inversionAlquilarMes" style="color: #10b981;">-</span>
+                            </div>
+                            <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 0.75rem 0;">
                             <div class="result-item">
                                 <span class="result-label">Diferencia (comprar - alquilar):</span>
                                 <span class="result-value" id="diffMes">-</span>
@@ -236,16 +261,18 @@
                         </div>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <div class="comparison-cards">
                         <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid #3b82f6;">
-                            <h4 style="color: #3b82f6; margin-bottom: 0.5rem;">Comprar</h4>
+                            <h4 style="color: #3b82f6; margin-bottom: 0.5rem;">💰 Comprar</h4>
                             <p style="font-size: 1.5rem; font-weight: 600;" id="patrimonioCompra">-</p>
-                            <small style="color: #a0a0a0;">Patrimonio neto (casa - deuda + inversiones)</small>
+                            <small style="color: #a0a0a0;">Patrimonio neto: (casa - deuda) + inversiones</small>
+                            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #fbbf24;">⚠️ Requiere vender la casa para liquidar</p>
                         </div>
                         <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid #10b981;">
-                            <h4 style="color: #10b981; margin-bottom: 0.5rem;">Alquilar + Invertir</h4>
+                            <h4 style="color: #10b981; margin-bottom: 0.5rem;">📈 Alquilar + Invertir</h4>
                             <p style="font-size: 1.5rem; font-weight: 600;" id="patrimonioAlquiler">-</p>
-                            <small style="color: #a0a0a0;">Capital invertido acumulado (no incluye alquiler pagado)</small>
+                            <small style="color: #a0a0a0;">Capital invertido acumulado (líquido)</small>
+                            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #6ee7b7;">✓ Capital accesible sin vender nada</p>
                         </div>
                     </div>
 
@@ -275,11 +302,18 @@
                         <h4 style="margin-bottom: 1rem;">Detalles del análisis</h4>
                         <div style="font-size: 0.95rem; color: #a0a0a0; line-height: 1.8;">
                             <p><strong>Hipoteca (sistema francés):</strong> calcula cuota fija mensual con capital financiado = valor de la propiedad - anticipo.</p>
-                            <p><strong>Comprar:</strong> Patrimonio = (valor de mercado de la casa - saldo de deuda) + inversiones. Además paga expensas extraordinarias (dueño) y mantenimiento anual.</p>
-                            <p><strong>Alquilar:</strong> Invierte el capital inicial equivalente (anticipo + gastos de compra) y también invierte la diferencia mensual vs comprar (según el presupuesto mensual fijo).</p>
-                            <p><strong>Presupuesto mensual fijo:</strong> ambas opciones usan el mismo presupuesto mensual = costo de comprar del mes 1 (hipoteca + expensas extraordinarias + mantenimiento mensual). La diferencia no gastada se invierte al rendimiento especificado.</p>
-                            <p><strong>Gráfico:</strong> muestra el patrimonio neto al comprar (valor de la casa - deuda + inversiones) vs el capital invertido al alquilar.</p>
-                            <p style="margin-top: 1rem; font-style: italic;">Sigue siendo un modelo educativo: no incluye impuestos, seguros, comisiones de venta, vacancia, mudanzas, etc.</p>
+                            
+                            <p><strong>Comprar:</strong> Patrimonio neto = (valor de mercado de la casa - saldo de deuda) + inversiones acumuladas. Además paga expensas extraordinarias (dueño) y mantenimiento anual. ⚠️ El valor de la casa NO es líquido hasta que la vendas.</p>
+                            
+                            <p><strong>Alquilar:</strong> Invierte el capital inicial equivalente (anticipo + gastos de compra que no gastaste) y además invierte la diferencia mensual positiva vs comprar. Este capital SÍ es líquido y accesible.</p>
+                            
+                            <p><strong>Presupuesto mensual fijo:</strong> para comparar de forma justa, ambas opciones usan el mismo presupuesto mensual = costo de comprar del mes 1 (cuota hipoteca + expensas extraordinarias + mantenimiento mensual). Si una opción cuesta menos, la diferencia se invierte automáticamente al rendimiento especificado.</p>
+                            
+                            <p><strong>¿Qué pasa si el alquiler es MÁS CARO que comprar?</strong> En ese caso, el escenario de alquilar NO puede invertir diferencia mensual (solo invierte el capital inicial). Solo el escenario de comprar invertirá el excedente del presupuesto.</p>
+                            
+                            <p><strong>Gráfico:</strong> muestra el patrimonio neto comparable de cada opción a lo largo del tiempo. Para comprar: casa - deuda + inversiones. Para alquilar: capital invertido total.</p>
+                            
+                            <p style="margin-top: 1rem; font-style: italic;">Modelo educativo simplificado: no incluye impuestos, seguros, comisiones de venta, vacancia, mudanzas, inflación diferencial, costos de oportunidad, ni riesgos de mercado.</p>
                         </div>
                     </div>
                 </div>
@@ -351,10 +385,17 @@
             document.getElementById('patrimonioAlquiler').textContent = 
                 window.FinanceUtils.formatCurrency(resultado.alquiler.capitalFinal);
 
+            document.getElementById('presupuestoFijo').textContent = window.FinanceUtils.formatCurrency(resultado.presupuestoMensualFijo);
             document.getElementById('cuotaHipoteca').textContent = window.FinanceUtils.formatCurrency(resultado.hipoteca.cuotaMensual);
             document.getElementById('costosDueno').textContent = window.FinanceUtils.formatCurrency(resultado.compra.costosDuenoMensualInicial);
             document.getElementById('totalComprarMes').textContent = window.FinanceUtils.formatCurrency(resultado.compra.costoViviendaMensualInicial);
             document.getElementById('alquilerMes').textContent = window.FinanceUtils.formatCurrency(resultado.alquiler.alquilerMensualInicial);
+
+            const inversionComprarMes = Math.max(0, resultado.presupuestoMensualFijo - resultado.compra.costoViviendaMensualInicial);
+            const inversionAlquilarMes = Math.max(0, resultado.presupuestoMensualFijo - resultado.alquiler.alquilerMensualInicial);
+            
+            document.getElementById('inversionComprarMes').textContent = window.FinanceUtils.formatCurrency(inversionComprarMes);
+            document.getElementById('inversionAlquilarMes').textContent = window.FinanceUtils.formatCurrency(inversionAlquilarMes);
 
             const diffMes = resultado.compra.costoViviendaMensualInicial - resultado.alquiler.alquilerMensualInicial;
             document.getElementById('diffMes').textContent = window.FinanceUtils.formatCurrency(diffMes);
@@ -531,6 +572,7 @@
             const interesesTotalesEstimados = Math.max(0, (hipoteca.cuotaMensual * hipoteca.cuotas) - capitalHipoteca);
 
             return {
+                presupuestoMensualFijo,
                 hipoteca: {
                     capital: capitalHipoteca,
                     tasaMensual: hipoteca.tasaMensual,
@@ -563,7 +605,7 @@
             const ctx = document.getElementById('comparacionChart').getContext('2d');
             
             const labels = timelineCompra.map(item => `Año ${item.year}`);
-            const dataValorCasa = timelineCompra.map(item => item.valorCasa);
+            const dataPatrimonioCompra = timelineCompra.map(item => item.patrimonio);
             const dataInversionAlquiler = timelineAlquiler.map(item => item.inversion);
             
             if (comparacionChart) {
@@ -576,8 +618,8 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Comprar (valor de la casa)',
-                            data: dataValorCasa,
+                            label: 'Comprar (patrimonio neto)',
+                            data: dataPatrimonioCompra,
                             borderColor: '#3b82f6',
                             backgroundColor: 'rgba(0,0,0,0)',
                             borderWidth: 3,
