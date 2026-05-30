@@ -42,55 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toolCards = document.querySelectorAll('.tool-card');
     toolCards.forEach(card => observer.observe(card));
-
-    // Animación de números contadores
-    animateNumbers();
 });
-
-// Animación de números para estadísticas
-function animateNumbers() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const target = entry.target;
-                const rawValue = target.getAttribute('data-animate-value') || target.getAttribute('data-value');
-                const finalValue = parseFloat(rawValue);
-                if (!Number.isFinite(finalValue)) {
-                    observer.unobserve(target);
-                    return;
-                }
-                animateValue(target, 0, finalValue, 2000);
-                observer.unobserve(target);
-            }
-        });
-    }, { threshold: 0.5 });
-
-    document.querySelectorAll('[data-animate-value]').forEach(el => {
-        observer.observe(el);
-    });
-}
-
-function animateValue(element, start, end, duration) {
-    const startTime = performance.now();
-    
-    const step = (currentTime) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const value = start + (end - start) * easeOutQuart(progress);
-        
-        element.textContent = Math.floor(value).toLocaleString('es-AR');
-        
-        if (progress < 1) {
-            requestAnimationFrame(step);
-        }
-    };
-    
-    requestAnimationFrame(step);
-}
-
-function easeOutQuart(x) {
-    return 1 - Math.pow(1 - x, 4);
-}
 
 // ============================================
 // UTILIDADES COMPARTIDAS PARA HERRAMIENTAS
@@ -153,11 +105,11 @@ function validateNumberInput(input, min = 0, max = Infinity) {
     const value = parseFloat(input.value);
     
     if (isNaN(value) || value < min || value > max) {
-        input.style.borderColor = '#ef4444';
+        input.classList.add('input-error');
         return false;
     }
-    
-    input.style.borderColor = '';
+
+    input.classList.remove('input-error');
     return true;
 }
 

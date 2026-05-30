@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 /* ============================================
    ARQUITECTURA DEL DINERO - ESTILOS
    Sistema de diseño minimalista y técnico
@@ -55,8 +57,6 @@
     --shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.6);
     --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 body {
     font-family: var(--font-main);
@@ -817,4 +817,9 @@ body > * {
 
 .hidden {
     display: none;
+}
+
+.input-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }

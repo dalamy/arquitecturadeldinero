@@ -27,19 +27,28 @@ if (Test-Path ".git") {
     Write-Host "`nEstado actual:" -ForegroundColor Cyan
     git status --short
     
+    # Verificar que hay un remote configurado
+    $remoteUrl = git remote get-url origin 2>$null
+    if (-not $remoteUrl) {
+        Write-Host "✗ No hay remote 'origin' configurado." -ForegroundColor Red
+        Write-Host "  Ejecutá: git remote add origin https://github.com/TU_USUARIO/REPO.git" -ForegroundColor Yellow
+        exit 1
+    }
+    Write-Host "✓ Remote: $remoteUrl" -ForegroundColor Green
+
     Write-Host "`n¿Querés hacer commit y push de los cambios? (S/N)" -ForegroundColor Yellow
     $respuesta = Read-Host
-    
+
     if ($respuesta -eq "S" -or $respuesta -eq "s") {
         $mensaje = Read-Host "Mensaje del commit"
         if ([string]::IsNullOrWhiteSpace($mensaje)) {
             $mensaje = "Actualización $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
         }
-        
+
         git add .
         git commit -m "$mensaje"
         git push
-        
+
         Write-Host "`n✓ Cambios subidos correctamente" -ForegroundColor Green
     }
 } else {
